@@ -1,0 +1,119 @@
+---
+title: "hw3"
+author: "Shi Tiancheng"
+date: "2024-10-16"
+output: github_document
+---
+
+Problem 2
+
+```{r}
+library(tidyverse)
+library(tidyr)
+library(readr)
+library(ggridges)
+library(ggplot2)
+```
+
+```{r}
+covar = read.csv("nhanes_covar.csv")
+accel = read.csv("nhanes_accel.csv")
+names(covar) = covar[4,]
+covar = covar[-c(1:4),]
+```
+
+```{r}
+covar$SEQN = as.numeric(covar$SEQN)
+```
+
+```{r}
+nhanes = left_join(covar, accel, by = "SEQN" )
+```
+
+```{r}
+nhanes_cleaned = filter(nhanes, age >= 21)
+nhanes_cleaned = drop_na(nhanes_cleaned)
+nhanes_cleaned = mutate(nhanes_cleaned,sex = factor(sex, levels = c(1, 2), labels = c("Male", "Female")),
+                        education = factor(education, levels = c(1, 2, 3), 
+                        labels = c("Less than high school", 
+                                  "High school equivalent", 
+                                  "More than high school")))
+```
+
+```{r}
+nhanes_cleaned |>
+  group_by(sex, education) |>
+  summarize(num = n()) |>
+  pivot_wider(names_from = sex, values_from = num) |> 
+  knitr::kable()
+```
+
+```{r}
+total_activity = mutate(nhanes_cleaned, total_activity = rowSums(nhanes_cleaned[,c(6:1445)],na.rm=TRUE))
+```
+
+```{r}
+total_activity$age = as.numeric(total_activity$age)
+total_activity$total_activity = as.numeric(total_activity$total_activity)
+ggplot(total_activity,aes(x=age,y=total_activity)) + 
+  geom_point(aes(color = sex)) +
+  geom_smooth(se = FALSE) +
+  facet_grid(.~ education) +
+  labs(
+    x = "Age",
+    y = "Total Activity"
+  ) 
+```
+
+Problem 3
+
+import the data
+```{r}
+Jan_2020 = read.csv("citibike/Jan 2020 Citi.csv") |> mutate(month = "Jan", year = 2020)
+Jan_2024 = read.csv("citibike/Jan 2024 Citi.csv") |> mutate(month = "Jan", year = 2024)
+July_2020 = read.csv("citibike/July 2020 Citi.csv") |> mutate(month = "July", year = 2020)
+July_2024 = read.csv("citibike/July 2024 Citi.csv") |> mutate(month = "July", year = 2024)
+```
+
+```{r}
+joined_table = bind_rows(Jan_2020, July_2020, Jan_2024, July_2024)
+```
+
+
+reader-friendly table
+```{r}
+joined_table |>
+  group_by(month, year, member_casual) |>
+  summarize(num_rides = n()) |>
+  pivot_wider(names_from = member_casual, values_from = num_rides) |> 
+  knitr::kable()
+```
+Members are more likely to use sharing bike than casual users.
+
+5 most popular starting stations
+```{r}
+July_2024 |>
+  group_by(start_station_name) |>
+  summarize(num_rides = n()) |>
+  arrange(desc(num_rides)) |>
+  slice_head(n = 5) |>
+  knitr::kable()
+```
+
+Plot of the effects of day of the week, month, and year on median ride duration.
+```{r}
+ggplot(joined_table)+geom_boxplot(aes(x=weekdays,y=duration, color = interaction(year, month)))
+```
+we can find that July 2020 has the largest median among all. Weekdays does not affect a lot, but the median in weekends is larger than weekdays. 
+
+2024 data analysis
+```{r}
+joined_table_2024 = bind_rows(Jan_2024, July_2024)
+```
+
+```{r}
+ggplot(joined_table_2024, aes(x = duration, fill = rideable_type)) + 
+  geom_histogram() +
+  facet_grid(month ~ member_casual)
+```
+We can find that member ride much more than casual users. Classic bikes are more likely be chosen and July has more rider.
