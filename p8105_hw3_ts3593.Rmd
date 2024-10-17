@@ -14,7 +14,7 @@ library(readr)
 library(ggridges)
 library(ggplot2)
 ```
-
+import data and clean
 ```{r}
 covar = read.csv("nhanes_covar.csv")
 accel = read.csv("nhanes_accel.csv")
@@ -40,6 +40,7 @@ nhanes_cleaned = mutate(nhanes_cleaned,sex = factor(sex, levels = c(1, 2), label
                                   "More than high school")))
 ```
 
+reader-friendly table
 ```{r}
 nhanes_cleaned |>
   group_by(sex, education) |>
@@ -48,10 +49,13 @@ nhanes_cleaned |>
   knitr::kable()
 ```
 
+We can find that the high education, the more people. 
+
 ```{r}
 total_activity = mutate(nhanes_cleaned, total_activity = rowSums(nhanes_cleaned[,c(6:1445)],na.rm=TRUE))
 ```
 
+plot total activities (y-axis) against age (x-axis)
 ```{r}
 total_activity$age = as.numeric(total_activity$age)
 total_activity$total_activity = as.numeric(total_activity$total_activity)
